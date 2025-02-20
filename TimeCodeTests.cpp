@@ -1,135 +1,107 @@
-
-#include <iostream>
-#include <assert.h>
-using namespace std;
+// AUTHOR: DUC MINH PHAM
+// DATE: FEB 18, 2025
 
 #include "TimeCode.h"
+#include <stdexcept>
+#include <iomanip>
+#include <sstream>
 
-
-void TestComponentsToSeconds(){
-	cout << "Testing ComponentsToSeconds" << endl;
-	
-	// Random but "safe" inputs
-	long long unsigned int t = TimeCode::ComponentsToSeconds(3, 17, 42);
-	assert(t == 11862);
-	
-	// More tests go here!
-	
-	cout << "PASSED!" << endl << endl;
+// Constructor: Converts input to total seconds (t) with rollover handling
+TimeCode::TimeCode(unsigned int hr, unsigned int min, long long unsigned int sec) {
+    t = ComponentsToSeconds(hr, min, sec);
 }
 
-
-void TestDefaultConstructor(){
-	cout << "Testing Default Constructor" << endl;
-	TimeCode tc;
-	
-	//cout << "Testing ToString()" << endl;
-	//cout << "tc: " << tc.ToString() << endl;
-	assert(tc.ToString() == "0:0:0");
-	
-	cout << "PASSED!" << endl << endl;
+// Copy Constructor
+TimeCode::TimeCode(const TimeCode& tc) {
+    t = tc.t;
 }
 
-
-void TestComponentConstructor(){
-	cout << "Testing Component Constructor" << endl;
-	TimeCode tc = TimeCode(0, 0, 0);
-	//cout << "Testing ToString()" << endl;
-	//cout << "tc: " << tc.ToString() << endl;
-	assert(tc.ToString() == "0:0:0");
-	
-	// more tests go here!
-	
-	// Roll-over inputs
-	TimeCode tc3 = TimeCode(3, 71, 3801);
-	//cout << "tc3: " << tc3.ToString() << endl;
-	assert(tc3.ToString() == "5:14:21");
-	
-	// More tests go here!
-	
-	cout << "PASSED!" << endl << endl;
+// Setters (without rollover, only setting specific components)
+void TimeCode::SetHours(unsigned int hours) {
+    unsigned int h, m;
+    long long unsigned int s;
+    GetComponents(h, m, s);
+    t = ComponentsToSeconds(hours, m, s);
 }
 
-
-void TestGetComponents(){
-	cout << "Testing GetComponents" << endl;
-	
-	unsigned int h;
-	unsigned int m;
-	unsigned int s;
-	
-	// Regular values
-	TimeCode tc = TimeCode(5, 2, 18);
-	tc.GetComponents(h, m, s);
-	assert(h == 5 && m == 2 && s == 18);
-	
-	// More tests go here!
-	
-	cout << "PASSED!" << endl << endl;
+void TimeCode::SetMinutes(unsigned int minutes) {
+    if (minutes >= 60) throw std::invalid_argument("Minutes must be < 60");
+    unsigned int h, m;
+    long long unsigned int s;
+    GetComponents(h, m, s);
+    t = ComponentsToSeconds(h, minutes, s);
 }
 
-
-void TestSubtract(){
-	cout << "Testing Subtract" << endl;
-	TimeCode tc1 = TimeCode(1, 0, 0);
-	TimeCode tc2 = TimeCode(0, 50, 0);
-	TimeCode tc3 = tc1 - tc2;
-	assert(tc3.ToString() == "0:10:0");
-	
-	
-	TimeCode tc4 = TimeCode(1, 15, 45);
-	try{
-		TimeCode tc5 = tc1 - tc4;
-		cout << "tc5: " << tc5.ToString() << endl;
-		assert(false);
-	}
-	catch(const invalid_argument& e){
-		// just leave this empty
-		// and keep doing more tests
-	}
-
-	// more tests
-	
-	cout << "PASSED!" << endl << endl;
+void TimeCode::SetSeconds(long long unsigned int seconds) {
+    unsigned int h, m;
+    long long unsigned int s;
+    GetComponents(h, m, s);
+    t = ComponentsToSeconds(h, m, seconds);
 }
 
-
-void TestSetMinutes()
-{
-	cout << "Testing SetMinutes" << endl;
-
-	TimeCode tc = TimeCode(8, 5, 9);
-	tc.SetMinutes(15); // test valid change
-	assert(tc.ToString() == "8:15:9");
-
-	try
-	{
-		tc.SetMinutes(80);  // test invalid change
-		assert(false);
-	}
-	catch (const invalid_argument &e)
-	{
-		// cout << e.what() << endl;
-	}
-
-	assert(tc.ToString() == "8:15:9");
-
-	cout << "PASSED!" << endl << endl;
+// Reset time to 0:0:0
+void TimeCode::reset() {
+    t = 0;
 }
 
-
-// Many More Tests...
-
-	
-int main(){
-	
-	TestComponentsToSeconds();
-	TestDefaultConstructor();
-	TestComponentConstructor();
-	TestGetComponents();
-	
-	// Many othere test functions...
-	
-	cout << "PASSED ALL TESTS!!!" << endl;
-	return 0;
+// Getters
+unsigned int TimeCode::GetHours() const {
+    return t / 3600;
 }
+
+unsigned int TimeCode::GetMinutes() const {
+    return (t % 3600) / 60;
+}
+
+unsigned int TimeCode::GetSeconds() const {
+    return t % 60;
+}
+
+// Convert total seconds to hours, minutes, seconds
+void TimeCode::GetComponents(unsigned int& hr, unsigned int& min, long long unsigned int& sec) const {
+    hr = t / 3600;
+    min = (t % 3600) / 60;
+    sec = t % 60;
+}
+
+// Static method to convert components to total seconds
+long long unsigned int TimeCode::ComponentsToSeconds(unsigned int hr, unsigned int min, long long unsigned int sec) {
+    return (hr * 3600) + (min * 60) + sec;
+}
+
+// Return time as formatted string "hh:mm:ss"
+std::string TimeCode::ToString() const {
+    unsigned int h, m;
+    long long unsigned int s;
+    GetComponents(h, m, s);
+    std::ostringstream oss;
+    oss << h << ":" << m << ":" << s;
+    return oss.str();
+}
+
+// Operators
+TimeCode TimeCode::operator+(const TimeCode& other) const {
+    return TimeCode(0, 0, t + other.t);
+}
+
+TimeCode TimeCode::operator-(const TimeCode& other) const {
+    if (t < other.t) throw std::invalid_argument("Negative TimeCode not allowed");
+    return TimeCode(0, 0, t - other.t);
+}
+
+TimeCode TimeCode::operator*(const TimeCode& other) const {
+    return TimeCode(0, 0, t * other.t);
+}
+
+TimeCode TimeCode::operator/(const TimeCode& other) const {
+    if (other.t == 0) throw std::invalid_argument("Cannot divide by zero");
+    return TimeCode(0, 0, t / other.t);
+}
+
+// Comparison Operators
+bool TimeCode::operator==(const TimeCode& other) const { return t == other.t; }
+bool TimeCode::operator!=(const TimeCode& other) const { return t != other.t; }
+bool TimeCode::operator<(const TimeCode& other) const { return t < other.t; }
+bool TimeCode::operator>(const TimeCode& other) const { return t > other.t; }
+bool TimeCode::operator<=(const TimeCode& other) const { return t <= other.t; }
+bool TimeCode::operator>=(const TimeCode& other) const { return t >= other.t; }
