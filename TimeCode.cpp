@@ -1,59 +1,45 @@
-// AUTHOR: DUC MINH PHAM
-// DATE: FEB 18, 2025
-
 #include "TimeCode.h"
-#include <iostream>
-#include <assert.h>
+#include <iomanip>
+#include <sstream>
 
-using namespace std;
+// Default constructor
+TimeCode::TimeCode() : hours(0), minutes(0), seconds(0) {}
 
-// Test Cases
-void TestConstructor() {
-    TimeCode tc(1, 30, 45);
-    assert(tc.ToString() == "1:30:45");
-    cout << "Constructor test passed!" << endl;
+// Constructor with parameters
+TimeCode::TimeCode(int h, int m, int s) : hours(h), minutes(m), seconds(s) {}
+
+// Getters
+int TimeCode::GetHours() const { return hours; }
+int TimeCode::GetMinutes() const { return minutes; }
+int TimeCode::GetSeconds() const { return seconds; }
+
+// Converts TimeCode to total seconds
+int TimeCode::GetTimeCodeAsSeconds() const {
+    return (hours * 3600) + (minutes * 60) + seconds;
 }
 
-void TestArithmeticOperators() {
-    TimeCode tc1(1, 0, 0);
-    TimeCode tc2(0, 30, 0);
-    TimeCode sum = tc1 + tc2;
-    assert(sum.ToString() == "1:30:0");
-    
-    TimeCode diff = tc1 - tc2;
-    assert(diff.ToString() == "0:30:0");
-    
-    cout << "Arithmetic operators test passed!" << endl;
+// Overloaded addition operator
+TimeCode TimeCode::operator+(const TimeCode& other) const {
+    int totalSeconds = GetTimeCodeAsSeconds() + other.GetTimeCodeAsSeconds();
+    int h = totalSeconds / 3600;
+    int m = (totalSeconds % 3600) / 60;
+    int s = totalSeconds % 60;
+    return TimeCode(h, m, s);
 }
 
-void TestEdgeCases() {
-    cout << "Testing Edge Cases" << endl;
-
-    // Test large inputs
-    TimeCode largeTC(10000, 59, 59);
-    assert(largeTC.ToString() == "10000:59:59");
-
-    // Test zero inputs
-    TimeCode zeroTC;
-    assert(zeroTC.ToString() == "0:0:0");
-
-    // Test subtraction edge case
-    try {
-        TimeCode t1(1, 0, 0);
-        TimeCode t2(2, 0, 0);
-        TimeCode t3 = t1 - t2;
-        assert(false);  // Should not reach here
-    } catch (const invalid_argument& e) {
-        cout << "Proper exception caught for negative subtraction" << endl;
-    }
-    
-    cout << "PASSED Edge Cases!" << endl;
+// Overloaded division operator
+TimeCode TimeCode::operator/(double divisor) const {
+    int totalSeconds = GetTimeCodeAsSeconds() / divisor;
+    int h = totalSeconds / 3600;
+    int m = (totalSeconds % 3600) / 60;
+    int s = totalSeconds % 60;
+    return TimeCode(h, m, s);
 }
 
-int main() {
-    TestConstructor();
-    TestArithmeticOperators();
-    TestEdgeCases();
-    cout << "ALL TESTS PASSED!" << endl;
-    return 0;
+// Converts TimeCode to a string
+std::string TimeCode::ToString() const {
+    std::ostringstream oss;
+    oss << hours << ":" << minutes << ":" << seconds;
+    return oss.str();
 }
+

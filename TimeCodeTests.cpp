@@ -1,107 +1,56 @@
-// AUTHOR: DUC MINH PHAM
-// DATE: FEB 18, 2025
-
+#include <iostream>
+#include <cassert>
 #include "TimeCode.h"
-#include <stdexcept>
-#include <iomanip>
-#include <sstream>
 
-// Constructor: Converts input to total seconds (t) with rollover handling
-TimeCode::TimeCode(unsigned int hr, unsigned int min, long long unsigned int sec) {
-    t = ComponentsToSeconds(hr, min, sec);
+using namespace std;
+
+void TestDefaultConstructor() {
+    cout << "Testing Default Constructor" << endl;
+    TimeCode tc;
+    assert(tc.ToString() == "0:0:0");
+    cout << "PASSED!\n" << endl;
 }
 
-// Copy Constructor
-TimeCode::TimeCode(const TimeCode& tc) {
-    t = tc.t;
+void TestConstructorAndGetters() {
+    cout << "Testing Constructor and Getters" << endl;
+    TimeCode tc(5, 2, 18);
+    assert(tc.GetHours() == 5);
+    assert(tc.GetMinutes() == 2);
+    assert(tc.GetSeconds() == 18);
+    cout << "PASSED!\n" << endl;
 }
 
-// Setters (without rollover, only setting specific components)
-void TimeCode::SetHours(unsigned int hours) {
-    unsigned int h, m;
-    long long unsigned int s;
-    GetComponents(h, m, s);
-    t = ComponentsToSeconds(hours, m, s);
+void TestAdditionOperator() {
+    cout << "Testing Addition Operator" << endl;
+    TimeCode tc1(2, 30, 15);
+    TimeCode tc2(1, 45, 10);
+    TimeCode result = tc1 + tc2;
+    assert(result.ToString() == "4:15:25");
+    cout << "PASSED!\n" << endl;
 }
 
-void TimeCode::SetMinutes(unsigned int minutes) {
-    if (minutes >= 60) throw std::invalid_argument("Minutes must be < 60");
-    unsigned int h, m;
-    long long unsigned int s;
-    GetComponents(h, m, s);
-    t = ComponentsToSeconds(h, minutes, s);
+void TestDivisionOperator() {
+    cout << "Testing Division Operator" << endl;
+    TimeCode tc(6, 0, 0);
+    TimeCode result = tc / 2.0;
+    assert(result.ToString() == "3:0:0");
+    cout << "PASSED!\n" << endl;
 }
 
-void TimeCode::SetSeconds(long long unsigned int seconds) {
-    unsigned int h, m;
-    long long unsigned int s;
-    GetComponents(h, m, s);
-    t = ComponentsToSeconds(h, m, seconds);
+void TestTimeConversion() {
+    cout << "Testing Time Conversion" << endl;
+    TimeCode tc(3, 15, 45);
+    assert(tc.GetTimeCodeAsSeconds() == (3 * 3600 + 15 * 60 + 45));
+    cout << "PASSED!\n" << endl;
 }
 
-// Reset time to 0:0:0
-void TimeCode::reset() {
-    t = 0;
-}
+int main() {
+    TestDefaultConstructor();
+    TestConstructorAndGetters();
+    TestAdditionOperator();
+    TestDivisionOperator();
+    TestTimeConversion();
 
-// Getters
-unsigned int TimeCode::GetHours() const {
-    return t / 3600;
+    cout << "ALL TESTS PASSED!" << endl;
+    return 0;
 }
-
-unsigned int TimeCode::GetMinutes() const {
-    return (t % 3600) / 60;
-}
-
-unsigned int TimeCode::GetSeconds() const {
-    return t % 60;
-}
-
-// Convert total seconds to hours, minutes, seconds
-void TimeCode::GetComponents(unsigned int& hr, unsigned int& min, long long unsigned int& sec) const {
-    hr = t / 3600;
-    min = (t % 3600) / 60;
-    sec = t % 60;
-}
-
-// Static method to convert components to total seconds
-long long unsigned int TimeCode::ComponentsToSeconds(unsigned int hr, unsigned int min, long long unsigned int sec) {
-    return (hr * 3600) + (min * 60) + sec;
-}
-
-// Return time as formatted string "hh:mm:ss"
-std::string TimeCode::ToString() const {
-    unsigned int h, m;
-    long long unsigned int s;
-    GetComponents(h, m, s);
-    std::ostringstream oss;
-    oss << h << ":" << m << ":" << s;
-    return oss.str();
-}
-
-// Operators
-TimeCode TimeCode::operator+(const TimeCode& other) const {
-    return TimeCode(0, 0, t + other.t);
-}
-
-TimeCode TimeCode::operator-(const TimeCode& other) const {
-    if (t < other.t) throw std::invalid_argument("Negative TimeCode not allowed");
-    return TimeCode(0, 0, t - other.t);
-}
-
-TimeCode TimeCode::operator*(const TimeCode& other) const {
-    return TimeCode(0, 0, t * other.t);
-}
-
-TimeCode TimeCode::operator/(const TimeCode& other) const {
-    if (other.t == 0) throw std::invalid_argument("Cannot divide by zero");
-    return TimeCode(0, 0, t / other.t);
-}
-
-// Comparison Operators
-bool TimeCode::operator==(const TimeCode& other) const { return t == other.t; }
-bool TimeCode::operator!=(const TimeCode& other) const { return t != other.t; }
-bool TimeCode::operator<(const TimeCode& other) const { return t < other.t; }
-bool TimeCode::operator>(const TimeCode& other) const { return t > other.t; }
-bool TimeCode::operator<=(const TimeCode& other) const { return t <= other.t; }
-bool TimeCode::operator>=(const TimeCode& other) const { return t >= other.t; }
